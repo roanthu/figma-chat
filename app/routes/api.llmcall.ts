@@ -33,6 +33,8 @@ async function llmCallAction({ context, request }: ActionFunctionArgs) {
     streamOutput?: boolean;
   }>();
 
+  logger.info(`Request: ${JSON.stringify({ system, message, model, provider })}`);
+
   const { name: providerName } = provider;
 
   // validate 'model' and 'provider' fields

@@ -11,6 +11,7 @@ import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
 import { WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
+import { getFigmaResponseFromUrl } from '~/components/chat/figmaClient';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -34,6 +35,38 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   });
 
   return cookies;
+}
+
+function containsFigmaUrl(lastMessage: any): boolean {
+  if (!lastMessage || !lastMessage.content || !Array.isArray(lastMessage.content)) {
+    return false;
+  }
+
+  return lastMessage.content.some((item: any) => {
+    if (item.type === 'text' && typeof item.text === 'string') {
+      return item.text.includes('figma.com');
+    }
+
+    return false;
+  });
+}
+
+function extractFigmaUrl(lastMessage: any): string | null {
+  if (!lastMessage || !lastMessage.content || !Array.isArray(lastMessage.content)) {
+    return null;
+  }
+
+  for (const item of lastMessage.content) {
+    if (item.type === 'text' && typeof item.text === 'string') {
+      const match = item.text.match(/https:\/\/www\.figma\.com\/[^\s]+/);
+
+      if (match) {
+        return match[0];
+      }
+    }
+  }
+
+  return null;
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
@@ -63,6 +96,28 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   try {
     const totalMessageContent = messages.reduce((acc, message) => acc + message.content, '');
     logger.debug(`Total message length: ${totalMessageContent.split(' ').length}, words`);
+    logger.debug(`Message:`, JSON.stringify(messages));
+
+    //get the last chunk of the message
+    const lastMessage = messages[messages.length - 1];
+
+    // Check if the last message contains a Figma URL
+    const hasFigmaUrl = containsFigmaUrl(lastMessage);
+    logger.debug(`Last message contains Figma URL: ${hasFigmaUrl}`);
+
+    // Extract the full Figma URL from the last message
+    const figmaUrl = extractFigmaUrl(lastMessage);
+    logger.debug(`Extracted Figma URL: ${figmaUrl}`);
+
+    if (hasFigmaUrl && figmaUrl) {
+      try {
+        const figmaResponse = await getFigmaResponseFromUrl(figmaUrl);
+        logger.debug(`Figma Response: ${figmaResponse}`);
+        messages.push({ id: generateId(), role: 'assistant', content: JSON.stringify(figmaResponse) });
+      } catch (error) {
+        logger.error(`Error fetching Figma response: ${error}`);
+      }
+    }
 
     let lastChunk: string | undefined = undefined;
 

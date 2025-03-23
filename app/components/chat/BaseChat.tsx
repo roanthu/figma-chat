@@ -36,6 +36,7 @@ import ProgressCompilation from './ProgressCompilation';
 import type { ProgressAnnotation } from '~/types/context';
 import type { ActionRunner } from '~/lib/runtime/action-runner';
 import { LOCAL_PROVIDERS } from '~/lib/stores/settings';
+import { getFigmaResponseFromUrl } from '~/components/chat/figmaClient';
 
 const TEXTAREA_MIN_HEIGHT = 76;
 
@@ -234,8 +235,26 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
     };
 
-    const handleSendMessage = (event: React.UIEvent, messageInput?: string) => {
+    const isFigmaUrl = (url: string): boolean => {
+      const figmaUrlPattern = /https:\/\/www\.figma\.com\/design\/([a-zA-Z0-9]+)\?node-id=([0-9]+-[0-9]+)/;
+      return figmaUrlPattern.test(url);
+    };
+
+    const handleSendMessage = async (event: React.UIEvent, messageInput?: string) => {
       if (sendMessage) {
+        if (messageInput && isFigmaUrl(messageInput)) {
+          const figmaResponse = await getFigmaResponseFromUrl(messageInput);
+
+          if (figmaResponse) {
+            console.log('Figma Response:', figmaResponse);
+
+            // Handle the Figma response as needed
+          }
+        } else {
+          //log to know the messageInput is not a figma url
+          console.log('Message Input:', event, 'is not a figma url');
+        }
+
         sendMessage(event, messageInput);
 
         if (recognition) {

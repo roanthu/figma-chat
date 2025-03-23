@@ -285,6 +285,9 @@ export const ChatImpl = memo(
     const sendMessage = async (_event: React.UIEvent, messageInput?: string) => {
       const messageContent = messageInput || input;
 
+      //log console message for debugging
+      console.log('received message', messageContent, 'messageInput', messageInput, 'input', input);
+
       if (!messageContent?.trim()) {
         return;
       }

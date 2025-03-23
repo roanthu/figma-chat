@@ -44,6 +44,10 @@ export async function streamText(props: {
   let currentModel = DEFAULT_MODEL;
   let currentProvider = DEFAULT_PROVIDER.name;
   let processedMessages = messages.map((message) => {
+    /*
+     * log message for debugging in string format
+     *  logger.info(JSON.stringify(message));
+     */
     if (message.role === 'user') {
       const { model, provider, content } = extractPropertiesFromMessage(message);
       currentModel = model;
