@@ -38,6 +38,11 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 function containsFigmaUrl(lastMessage: any): boolean {
+  //if last message is string type, check if it contains figma.com
+  if (typeof lastMessage.content === 'string') {
+    return lastMessage.content.includes('figma.com');
+  }
+
   if (!lastMessage || !lastMessage.content || !Array.isArray(lastMessage.content)) {
     return false;
   }
@@ -52,6 +57,14 @@ function containsFigmaUrl(lastMessage: any): boolean {
 }
 
 function extractFigmaUrl(lastMessage: any): string | null {
+  if (typeof lastMessage.content === 'string') {
+    const match = lastMessage.content.match(/https:\/\/www\.figma\.com\/[^\s]+/);
+
+    if (match) {
+      return match[0];
+    }
+  }
+
   if (!lastMessage || !lastMessage.content || !Array.isArray(lastMessage.content)) {
     return null;
   }
@@ -70,7 +83,7 @@ function extractFigmaUrl(lastMessage: any): string | null {
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages, files, promptId, contextOptimization } = await request.json<{
+  let { messages, files, promptId, contextOptimization } = await request.json<{
     messages: Messages;
     files: any;
     promptId?: string;
@@ -98,8 +111,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     logger.debug(`Total message length: ${totalMessageContent.split(' ').length}, words`);
     logger.debug(`Message:`, JSON.stringify(messages));
 
-    //get the last chunk of the message
-    const lastMessage = messages[messages.length - 1];
+    //Find the last message in messages that lastMessage.content is a array
+    const lastMessage = messages
+      .slice()
+      .reverse()
+      .find((message) => Array.isArray(message.content));
+
+    // const lastMessage = messages[messages.length - 1];
 
     // Check if the last message contains a Figma URL
     const hasFigmaUrl = containsFigmaUrl(lastMessage);
@@ -323,6 +341,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           order: progressCounter++,
           message: 'Generating Response',
         } satisfies ProgressAnnotation);
+
+        //if the last message contains a figma url, assign promptId to figma
+        if (hasFigmaUrl) {
+          promptId = 'figma';
+        }
 
         const result = await streamText({
           messages,

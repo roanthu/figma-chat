@@ -1,5 +1,6 @@
 import { getSystemPrompt } from './prompts/prompts';
 import optimized from './prompts/optimized';
+import { getFigmaJsonPrompt } from '~/lib/common/prompts/figmaJsonPrompt';
 
 export interface PromptOptions {
   cwd: string;
@@ -25,6 +26,11 @@ export class PromptLibrary {
       label: 'Optimized Prompt (experimental)',
       description: 'an Experimental version of the prompt for lower token usage',
       get: (options) => optimized(options),
+    },
+    figma: {
+      label: 'Figma Json Prompt',
+      description: 'Optimized Prompt for Generating an Angular Component from Figma JSON',
+      get: (options) => getFigmaJsonPrompt(options.cwd),
     },
   };
   static getList() {

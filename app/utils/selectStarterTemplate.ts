@@ -59,7 +59,7 @@ Instructions:
 5. If no perfect match exists, recommend the closest option
 
 Important: Provide only the selection tags in your response, no additional text.
-MOST IMPORTANT: YOU DONT HAVE TIME TO THINK JUST START RESPONDING BASED ON HUNCH 
+MOST IMPORTANT: YOU DONT HAVE TIME TO THINK JUST START RESPONDING BASED ON HUNCH
 `;
 
 const templates: Template[] = STARTER_TEMPLATES.filter((t) => !t.name.includes('shadcn'));
@@ -82,33 +82,40 @@ const parseSelectedTemplate = (llmOutput: string): { template: string; title: st
 };
 
 export const selectStarterTemplate = async (options: { message: string; model: string; provider: ProviderInfo }) => {
-  const { message, model, provider } = options;
-  const requestBody = {
-    message,
-    model,
-    provider,
-    system: starterTemplateSelectionPrompt(templates),
+  return {
+    template: 'bolt-angular',
+    title: 'Angular Project',
   };
-  const response = await fetch('/api/llmcall', {
-    method: 'POST',
-    body: JSON.stringify(requestBody),
-  });
-  const respJson: { text: string } = await response.json();
-  console.log(respJson);
 
-  const { text } = respJson;
-  const selectedTemplate = parseSelectedTemplate(text);
-
-  if (selectedTemplate) {
-    return selectedTemplate;
-  } else {
-    console.log('No template selected, using blank template');
-
-    return {
-      template: 'blank',
-      title: '',
-    };
-  }
+  /*
+   *const { message, model, provider } = options;
+   *const requestBody = {
+   *message,
+   *model,
+   *provider,
+   *system: starterTemplateSelectionPrompt(templates),
+   *};
+   *const response = await fetch('/api/llmcall', {
+   *method: 'POST',
+   *body: JSON.stringify(requestBody),
+   *});
+   *const respJson: { text: string } = await response.json();
+   *console.log(respJson);
+   *
+   *const { text } = respJson;
+   *const selectedTemplate = parseSelectedTemplate(text);
+   *
+   *if (selectedTemplate) {
+   *return selectedTemplate;
+   *} else {
+   *console.log('No template selected, using blank template');
+   *
+   *return {
+   *  template: 'blank',
+   *  title: '',
+   *};
+   *}
+   */
 };
 
 const getGitHubRepoContent = async (
