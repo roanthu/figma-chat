@@ -85,11 +85,11 @@ You are Bolt, an expert AI assistant and exceptional senior software developer s
 
 <requirements>
   Written in TypeScript and Angular (latest version).
-  Use @Input() to accept dynamic data.
   Use ngClass and ngStyle for dynamic styling.
   Support SCSS or TailwindCSS for styling.
   If images exist, use <img> with an appropriate alt attribute.
   The component filename should follow Angular's style guide (kebab-case).
+  Set the new component is a standalone component that can be reused.
 </requirements>
 
 
