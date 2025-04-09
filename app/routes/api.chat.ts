@@ -11,7 +11,8 @@ import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
 import { WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
-import { getFigmaResponseFromUrl } from '~/components/chat/figmaClient';
+import { type FigmaFile, getFigmaResponseFromUrl } from '~/components/chat/figmaClient';
+import { genHtmlCss } from '~/lib/.server/llm/html-generator';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -129,8 +130,22 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
     if (hasFigmaUrl && figmaUrl) {
       try {
-        const figmaResponse = await getFigmaResponseFromUrl(figmaUrl);
+        let figmaResponse = await getFigmaResponseFromUrl(figmaUrl);
         logger.debug(`Figma Response: ${figmaResponse}`);
+        let {html, css} = await genHtmlCss({
+          figmaFile: figmaResponse,
+          messages,
+          env: context.cloudflare?.env,
+          apiKeys,
+          files,
+          providerSettings,
+          promptId,
+          contextOptimization
+        });
+        //log the html and css
+        logger.debug(`Figma HTML: ${html}`);
+        logger.debug(`Figma CSS: ${css}`);
+
         messages.push({ id: generateId(), role: 'assistant', content: JSON.stringify(figmaResponse) });
       } catch (error) {
         logger.error(`Error fetching Figma response: ${error}`);

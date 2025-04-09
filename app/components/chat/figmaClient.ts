@@ -5,12 +5,21 @@ const FIGMA_TOKEN = 'figd_p5W7xMa2C-pJ8Mf7DpzQv7RN6TkzgW9-gi3EM0nk';
 
 const logger = createScopedLogger('figmaClient');
 
-interface FigmaResponse {
+export interface FigmaFile {
   // Define the structure of the response based on Figma API documentation
   nodes: Record<string, any>;
 }
 
-async function getFigmaNodes(fileKey: string, nodeId: string): Promise<FigmaResponse> {
+interface FigmaNode {
+  id: string;
+  name: string;
+  type: string;
+  children?: FigmaNode[];
+}
+
+
+
+async function getFigmaNodes(fileKey: string, nodeId: string): Promise<FigmaFile> {
   const url = `${FIGMA_API_URL}/${fileKey}/nodes?ids=${nodeId}`;
   const headers = {
     'X-Figma-Token': FIGMA_TOKEN,
@@ -24,7 +33,7 @@ async function getFigmaNodes(fileKey: string, nodeId: string): Promise<FigmaResp
       throw new Error(`Error fetching Figma nodes: ${response.statusText}`);
     }
 
-    const data: FigmaResponse = await response.json();
+    const data: FigmaFile = await response.json();
 
     return data;
   } catch (error) {
@@ -47,13 +56,13 @@ function extractFileKeyAndNodeId(figmaUrl: string): { fileKey: string; nodeId: s
   return null;
 }
 
-async function getFigmaResponseFromUrl(figmaUrl: string): Promise<FigmaResponse | null> {
+async function getFigmaResponseFromUrl(figmaUrl: string): Promise<FigmaFile> {
   const extracted = extractFileKeyAndNodeId(figmaUrl);
   logger.info(`Extracted ${extracted}`);
 
   if (!extracted) {
     logger.error(`Error fetching Figma response from url: ${figmaUrl}`);
-    return null;
+    throw new Error(`Error fetching Figma response from url: ${figmaUrl}`);
   }
 
   const { fileKey, nodeId } = extracted;
@@ -62,7 +71,7 @@ async function getFigmaResponseFromUrl(figmaUrl: string): Promise<FigmaResponse 
     return await getFigmaNodes(fileKey, nodeId);
   } catch (error) {
     logger.error(`Error getting Figma response from url: ${error}`);
-    return null;
+    throw new Error(`Error getting Figma response from url: ${error}`);
   }
 }
 
